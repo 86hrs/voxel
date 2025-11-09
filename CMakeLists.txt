@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 23)
 
 # Compilation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -Wall -Wextra ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -Wall -Wextra")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O3 -ffast-math")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -66,7 +66,7 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${IMGUI_SOURCES})
 # Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE 
     src
-    /opt/homebrew/Cellar/glm/1.0.1/include/
+    /opt/homebrew/Cellar/glm/1.0.2/include/
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
     ${FREETYPE_INCLUDE_DIRS}
@@ -77,6 +77,14 @@ target_link_libraries(${PROJECT_NAME}
     ${OPENGL_LIBRARIES}
     glfw
     ${FREETYPE_LIBRARIES}
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -O3
+    -march=native
+    -flto
+    -fno-rtti             # If you don’t use dynamic_cast or typeid
 )
 
 # Shader and resource files setup

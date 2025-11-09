@@ -254,7 +254,6 @@ void Engine::render() {
     glm::mat4 model =
         glm::scale(glm::mat4(1.0f), (glm::vec3){2.0f, 2.0f, 2.0f});
     model = glm::translate(model, (glm::vec3){0.0f, 7.0f, -2.0});
-    // model = glm::rotate(model, 4.7f, (glm::vec3){1.0f, 0.0f, 0.0f});
     this->obj_shader->use();
     this->obj_shader->set_mat4("model", model);
     this->obj_shader->set_mat4("view", this->view);
@@ -277,6 +276,7 @@ void Engine::render_imgui() {
     ImGui::Text("Vendor: %s", this->vendor);
     ImGui::Text("FPS: %d", this->fps);
     ImGui::Text("Frame time: %f", ((float)1 / this->fps) * 1000.0f);
+    ImGui::Checkbox("V-Sync", &this->b_vsync);
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     ImGui::InputFloat("Fov", &this->camera->Zoom, 5, 5);
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
@@ -397,10 +397,17 @@ void Engine::update() {
 
     this->chunker->update(camera->Position);
 
-    if (this->wireframe)
+    if (this->wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
+    } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    if (this->b_vsync) {
+        glfwSwapInterval(1);
+    } else {
+        glfwSwapInterval(0);
+    }
 
     float farP = 1.141 * this->chunker->render_distance * Chunk::CHUNK_SIZE;
 

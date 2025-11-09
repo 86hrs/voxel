@@ -61,6 +61,7 @@ struct Engine {
     float previousSecond = glfwGetTime();
     int frameCount = 0;
     int fps = 0;
+    bool b_vsync = false;
 
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);

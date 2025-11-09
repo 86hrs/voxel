@@ -98,7 +98,7 @@ void Chunk::generate_terrain() {
                     this->noise->GetNoise(worldX * 10, worldZ * 10);
                 if (x >= 2 and x < CHUNK_SIZE - 2 and z >= 2 and
                     z < CHUNK_SIZE - 2) {
-                    if (treeValue > 0.93f and y < CHUNK_SIZE - 6) {
+                    if (treeValue > 0.89f and y < CHUNK_SIZE - 6) {
                         generate_tree(x, y + 1, z);
                         this->chunk_trees += 1;
                     }

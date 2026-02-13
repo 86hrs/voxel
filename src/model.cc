@@ -45,7 +45,6 @@ void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
     int width = 0, height = 0, channels = 0;
 
     if (texture->mHeight == 0 && texture->pcData) {
-        // Compressed texture
         image = stbi_load_from_memory(
             reinterpret_cast<unsigned char *>(texture->pcData), texture->mWidth,
             &width, &height, &channels, 0);
@@ -78,14 +77,13 @@ void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
     glGenerateMipmap(GL_TEXTURE_2D);
 
     if (texture->mHeight > 0)
-        delete[] image; // free manually allocated memory
+        delete[] image; 
     else
         stbi_image_free(image);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// Build all meshes from the scene
 void Model::build_meshes() {
     if (!scene)
         return;
@@ -117,7 +115,6 @@ void Model::build_meshes() {
             newMesh.vertices.push_back(v);
         }
 
-        // Indices
         unsigned int baseVertex = 0;
         for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
             const aiFace &face = mesh->mFaces[i];
@@ -127,7 +124,6 @@ void Model::build_meshes() {
             }
         }
 
-        // Load embedded texture if any
         if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
             aiString str;
             material->GetTexture(aiTextureType_BASE_COLOR, 0, &str);
@@ -137,7 +133,6 @@ void Model::build_meshes() {
             }
         }
 
-        // Upload mesh to GPU
         glGenVertexArrays(1, &newMesh.vao);
         glGenBuffers(1, &newMesh.vbo);
         glGenBuffers(1, &newMesh.ebo);
@@ -169,7 +164,6 @@ void Model::build_meshes() {
     std::cout << "Loaded " << meshes.size() << " meshes.\n";
 }
 
-// Render all meshes
 void Model::render() {
     GLint prevTex;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTex);

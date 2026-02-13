@@ -35,7 +35,6 @@ class Model {
 
     std::vector<Mesh> meshes;
 
-    // Internal helpers
     void load_scene();
     void build_meshes();
     void load_embedded_texture(const aiTexture *texture, GLuint &texID);

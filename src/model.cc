@@ -172,12 +172,11 @@ void Model::build_meshes() {
             newMesh.vertices.push_back(v);
         }
 
-        unsigned int baseVertex = 0;
         for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
             const aiFace &face = mesh->mFaces[i];
             assert(face.mNumIndices == 3);
             for (unsigned int j = 0; j < face.mNumIndices; ++j) {
-                newMesh.indices.push_back(face.mIndices[j] + baseVertex);
+                newMesh.indices.push_back(face.mIndices[j]);
             }
         }
 
@@ -222,12 +221,8 @@ void Model::build_meshes() {
 }
 
 void Model::render() {
-    GLint prevTexUnit;
-    GLint prevTex;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTexUnit);
     glActiveTexture(
         GL_TEXTURE10); // Use unit 10, away from your 0-6 block textures
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTex);
 
     for (auto &mesh : meshes) {
         if (mesh.diffuseTexture) {
@@ -236,8 +231,4 @@ void Model::render() {
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     }
-
-    glBindTexture(GL_TEXTURE_2D, prevTex);
-    glActiveTexture(prevTexUnit);
-    glBindVertexArray(0);
 }

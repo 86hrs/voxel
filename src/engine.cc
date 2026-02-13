@@ -417,6 +417,8 @@ void Engine::update() {
     this->view = this->camera->get_view_matrix();
 }
 void Engine::clean() {
+    delete this->doom;
+    delete this->porsche;
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

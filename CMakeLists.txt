@@ -49,7 +49,6 @@ target_link_libraries(${PROJECT_NAME}
     assimp::assimp
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 target_compile_options(${PROJECT_NAME} PRIVATE
     -O3
     -ffast-math
@@ -83,6 +82,7 @@ add_custom_target(copy_resources ALL
 foreach(RESOURCE_FILE ${SHADER_FILES})
     get_filename_component(RESOURCE_FILENAME ${RESOURCE_FILE} NAME)
     add_custom_command(
+        POST_BUILD
         TARGET copy_resources
         COMMAND ${CMAKE_COMMAND} -E copy
         ${RESOURCE_FILE}

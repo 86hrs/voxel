@@ -32,7 +32,8 @@ struct Engine {
     std::unique_ptr<Hud> hud;
     std::unordered_map<Block::BlockTexture, unsigned int> textures;
 
-    Model *diablo;
+    Model *porsche;
+    Model *doom;
 
     void input();
     void update();

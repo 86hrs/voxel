@@ -201,7 +201,8 @@ void Engine::setup_shaders() {
         std::make_unique<Shader>("obj_vertex.glsl", "obj_fragment.glsl");
 }
 void Engine::setup_objects() {
-    this->diablo = new Model("doom.glb");
+    this->porsche = new Model("930.glb");
+    this->doom = new Model("doom.glb");
     this->load_textures("grass_block_top.png", Block::BlockTexture::GRASS_TOP);
     this->load_textures("dirt.png", Block::BlockTexture::GRASS_BOTTOM);
     this->load_textures("spruce_log.png", Block::BlockTexture::WOOD);
@@ -249,15 +250,21 @@ void Engine::render() {
     this->hud->render();
 
     this->model = glm::translate(model, glm::vec3{0.0, 20.0, -5.0});
-    this->model = glm::scale(model, glm::vec3{0.05, 0.05, 0.05});
     this->obj_shader->use();
     this->obj_shader->set_mat4("model", this->model);
     this->obj_shader->set_mat4("view", this->view);
     this->obj_shader->set_mat4("projection", this->projection);
     this->obj_shader->set_float("time", (float)glfwGetTime());
-    this->obj_shader->set_int("diffuseMap", 0);
+    this->obj_shader->set_int("diffuseMap", 10);
     glFrontFace(GL_CCW);
-    this->diablo->render();
+    this->porsche->render();
+
+    this->model = glm::mat4(1.0f);
+    this->model = glm::translate(model, glm::vec3{0.0, 20.0, 15.0});
+    this->model = glm::scale(model, glm::vec3{0.03, 0.03, 0.03});
+    this->obj_shader->set_mat4("model", this->model);
+    this->doom->render();
+
     this->render_imgui();
     glfwSwapBuffers(this->window);
 }

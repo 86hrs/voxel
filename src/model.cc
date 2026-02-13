@@ -27,11 +27,13 @@ void Model::load_scene() {
         this->scene = nullptr;
         return;
     }
-
     this->scene = const_cast<aiScene *>(scene);
 }
 
 void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
+    std::cout << "Loading embedded texture: mHeight=" << texture->mHeight
+              << " mWidth=" << texture->mWidth << "\n";
+
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
 
@@ -43,24 +45,44 @@ void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
 
     unsigned char *image = nullptr;
     int width = 0, height = 0, channels = 0;
+    bool needsFree = false;
 
     if (texture->mHeight == 0 && texture->pcData) {
+        std::cout << "  Compressed texture, size=" << texture->mWidth
+                  << " bytes\n";
         image = stbi_load_from_memory(
             reinterpret_cast<unsigned char *>(texture->pcData), texture->mWidth,
             &width, &height, &channels, 0);
+        if (image) {
+            std::cout << "  Decompressed to: " << width << "x" << height
+                      << " channels=" << channels << "\n";
+        }
+        needsFree = true;
     } else if (texture->mHeight > 0 && texture->pcData) {
-        // Uncompressed RGBA texture
         width = texture->mWidth;
         height = texture->mHeight;
         channels = 4;
-        image = new unsigned char[width * height * 4];
-        for (int i = 0; i < width * height; ++i) {
-            aiTexel texel = reinterpret_cast<aiTexel *>(texture->pcData)[i];
-            image[i * 4 + 0] = texel.r;
-            image[i * 4 + 1] = texel.g;
-            image[i * 4 + 2] = texel.b;
-            image[i * 4 + 3] = texel.a;
+
+        std::cout << "  Uncompressed texture: " << width << "x" << height
+                  << "\n";
+
+        if (width <= 0 || height <= 0 || width > 16384 || height > 16384) {
+            std::cerr << "Invalid texture dimensions: " << width << "x"
+                      << height << "\n";
+            glBindTexture(GL_TEXTURE_2D, 0);
+            return;
         }
+
+        image = new unsigned char[width * height * 4];
+        const aiTexel *texels = texture->pcData;
+
+        for (int i = 0; i < width * height; ++i) {
+            image[i * 4 + 0] = texels[i].r;
+            image[i * 4 + 1] = texels[i].g;
+            image[i * 4 + 2] = texels[i].b;
+            image[i * 4 + 3] = texels[i].a;
+        }
+        needsFree = true;
     }
 
     if (!image) {
@@ -69,19 +91,54 @@ void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
         return;
     }
 
-    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
-    GLenum internalFormat = (channels == 4) ? GL_RGBA8 : GL_RGB8;
+    // Determine format based on channels
+    GLenum format, internalFormat;
+    switch (channels) {
+    case 1:
+        format = GL_RED;
+        internalFormat = GL_R8;
+        break;
+    case 3:
+        format = GL_RGB;
+        internalFormat = GL_RGB8;
+        break;
+    case 4:
+        format = GL_RGBA;
+        internalFormat = GL_RGBA8;
+        break;
+    default:
+        std::cerr << "Unsupported channel count: " << channels << "\n";
+        if (needsFree) {
+            if (texture->mHeight > 0)
+                delete[] image;
+            else
+                stbi_image_free(image);
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return;
+    }
 
+    std::cout << "  Uploading to GPU: format=" << format
+              << " internal=" << internalFormat << "\n";
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format,
                  GL_UNSIGNED_BYTE, image);
+
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after glTexImage2D: " << err << "\n";
+    }
+
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    if (texture->mHeight > 0)
-        delete[] image; 
-    else
-        stbi_image_free(image);
+    if (needsFree) {
+        if (texture->mHeight > 0)
+            delete[] image;
+        else
+            stbi_image_free(image);
+    }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    std::cout << "  Texture loaded successfully, ID=" << texID << "\n";
 }
 
 void Model::build_meshes() {
@@ -165,19 +222,22 @@ void Model::build_meshes() {
 }
 
 void Model::render() {
+    GLint prevTexUnit;
     GLint prevTex;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTex);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTexUnit);
+    glActiveTexture(
+        GL_TEXTURE10); // Use unit 10, away from your 0-6 block textures
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTex);
+
     for (auto &mesh : meshes) {
         if (mesh.diffuseTexture) {
-            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, mesh.diffuseTexture);
         }
-
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
     glBindTexture(GL_TEXTURE_2D, prevTex);
+    glActiveTexture(prevTexUnit);
     glBindVertexArray(0);
 }
-

@@ -162,8 +162,8 @@ void Engine::setup_opengl() {
     glViewport(0, 0, fb_w, fb_h);
 
     glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     this->vendor = (const char *)glGetString(GL_VENDOR);
     this->renderer = (const char *)glGetString(GL_RENDERER);
@@ -242,8 +242,8 @@ void Engine::render() {
     this->shader->set_mat4("model", this->model);
     this->shader->set_mat4("projection", this->projection);
     this->shader->set_float("time", (float)glfwGetTime());
-    // glFrontFace(GL_CW);
-    // this->chunker->render();
+    glFrontFace(GL_CW);
+    this->chunker->render();
 
     this->hud_shader->use();
     this->hud->render();
@@ -256,7 +256,7 @@ void Engine::render() {
     this->obj_shader->set_mat4("projection", this->projection);
     this->obj_shader->set_float("time", (float)glfwGetTime());
     this->obj_shader->set_int("diffuseMap", 0);
-    // glFrontFace(GL_CCW);
+    glFrontFace(GL_CCW);
     this->diablo->render();
     this->render_imgui();
     glfwSwapBuffers(this->window);

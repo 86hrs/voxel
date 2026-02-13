@@ -23,11 +23,13 @@ Chunk::~Chunk() {
     glDeleteBuffers(1, &this->vbo_type);
     glDeleteBuffers(1, &this->ebo);
 }
+
 void Chunk::generate_terrain() {
     this->noise->SetFrequency(0.01f);
 
     float biome_noise = this->noise->GetNoise(this->chunk_position.x * 5.0f,
                                               this->chunk_position.y * 5.0f);
+
     Biome biome = Biome::Plains;
     if (biome_noise > 0.3f) {
         biome = Biome::Desert;
@@ -66,7 +68,6 @@ void Chunk::generate_terrain() {
                             Block::BlockTexture::SAND;
                         this->blocks[x][y][z].side = Block::BlockTexture::SAND;
                         break;
-
                     default:
                         break;
                     }

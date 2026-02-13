@@ -4,8 +4,7 @@
 #include "chunker.h"
 #include "glad.h"
 #include "hud.h"
-#include "obj.h"
-#include "globj.h"
+#include "model.h"
 #include "shader.hpp"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -33,8 +32,7 @@ struct Engine {
     std::unique_ptr<Hud> hud;
     std::unordered_map<Block::BlockTexture, unsigned int> textures;
 
-    OBJModel objModel;
-    GLObject glModel;
+    Model *diablo;
 
     void input();
     void update();
@@ -49,6 +47,7 @@ struct Engine {
     void setup_shaders();
     void load_textures(const std::string &path,
                        Block::BlockTexture textureType);
+    void load_scene(const std::string &filename);
 
     std::unique_ptr<Camera> camera;
 
@@ -65,6 +64,7 @@ struct Engine {
 
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f);
 
     static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
         Engine *instance = (Engine *)(glfwGetWindowUserPointer(window));

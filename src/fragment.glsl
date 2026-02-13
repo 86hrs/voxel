@@ -22,12 +22,11 @@ void main() {
         texColor.rgb *= vec3(0.61, 0.8, 0.42);
     }
 
-    vec3 norm = normalize(Normal);
+    // vec3 norm = normalize(Normal);
+    vec3 norm = Normal;
     float diff = max(dot(norm, -lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
-
     vec3 ambient = ambientStrength * lightColor;
-
     vec3 result = (ambient + diffuse) * texColor.rgb;
 
     FragColor = vec4(result, texColor.a);

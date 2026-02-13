@@ -1,13 +1,12 @@
 // engine.cc
 #include <iostream>
 #include "engine.h"
-#include "GLFW/glfw3.h"
-#include <OpenGL/gl.h>
+#include "camera.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "obj.h"
+#include "model.h"
 #include "shader.hpp"
 #include "textures.h"
 #include <cassert>
@@ -157,12 +156,14 @@ void Engine::setup_opengl() {
     // GLAD
     assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) &&
            "Failed to initialize GLAD\n");
-    glViewport(0, 0, this->width, this->height);
+
+    int fb_w, fb_h;
+    glfwGetFramebufferSize(window, &fb_w, &fb_h);
+    glViewport(0, 0, fb_w, fb_h);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CW);
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);
 
     this->vendor = (const char *)glGetString(GL_VENDOR);
     this->renderer = (const char *)glGetString(GL_RENDERER);
@@ -200,26 +201,21 @@ void Engine::setup_shaders() {
         std::make_unique<Shader>("obj_vertex.glsl", "obj_fragment.glsl");
 }
 void Engine::setup_objects() {
-    assert(loadOBJ("diablo.obj", &this->objModel) && "Failed to load obj.");
-
-    printOBJ(&objModel);
-    setupGLObject(&this->objModel, &this->glModel);
-
+    this->diablo = new Model("doom.glb");
     this->load_textures("grass_block_top.png", Block::BlockTexture::GRASS_TOP);
     this->load_textures("dirt.png", Block::BlockTexture::GRASS_BOTTOM);
-    this->load_textures("grass_block_side.png",
-                        Block::BlockTexture::GRASS_SIDE);
     this->load_textures("spruce_log.png", Block::BlockTexture::WOOD);
     this->load_textures("oak_leaves.png", Block::BlockTexture::LEAF);
     this->load_textures("sand.png", Block::BlockTexture::SAND);
     this->load_textures("spruce_log_top.png", Block::BlockTexture::WOOD_TOP);
-
+    this->load_textures("grass_block_side.png",
+                        Block::BlockTexture::GRASS_SIDE);
     this->shader->use();
+
     for (const auto &[textureType, textureID] : this->textures) {
         int textureUnit = (int)(textureType);
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_2D, textureID);
-
         std::string uniformName =
             "textures[" + std::to_string(textureUnit) + "]";
 
@@ -228,8 +224,6 @@ void Engine::setup_objects() {
     Shader::stop();
 
     this->chunker = std::make_unique<ChunkManager>(shader.get());
-    this->chunker->total_triangles += objModel.vertexCount / 3;
-    this->chunker->total_verticies += objModel.vertexCount;
     this->camera = std::make_unique<Camera>(glm::vec3(0.0f, 15.0f, 0.0f));
     this->hud = std::make_unique<Hud>();
 }
@@ -242,25 +236,28 @@ void Engine::render() {
     glClearColor(119.0f / 255.0f, 168.0f / 255.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    this->model = glm::identity<glm::mat4>();
     this->shader->use();
     this->shader->set_mat4("view", this->view);
+    this->shader->set_mat4("model", this->model);
     this->shader->set_mat4("projection", this->projection);
     this->shader->set_float("time", (float)glfwGetTime());
-    this->chunker->render();
+    // glFrontFace(GL_CW);
+    // this->chunker->render();
 
     this->hud_shader->use();
     this->hud->render();
 
-    glm::mat4 model =
-        glm::scale(glm::mat4(1.0f), (glm::vec3){2.0f, 2.0f, 2.0f});
-    model = glm::translate(model, (glm::vec3){0.0f, 7.0f, -2.0});
+    this->model = glm::translate(model, glm::vec3{0.0, 20.0, -5.0});
+    this->model = glm::scale(model, glm::vec3{0.05, 0.05, 0.05});
     this->obj_shader->use();
-    this->obj_shader->set_mat4("model", model);
+    this->obj_shader->set_mat4("model", this->model);
     this->obj_shader->set_mat4("view", this->view);
     this->obj_shader->set_mat4("projection", this->projection);
     this->obj_shader->set_float("time", (float)glfwGetTime());
-    renderGLObject(&this->glModel);
-
+    this->obj_shader->set_int("diffuseMap", 0);
+    // glFrontFace(GL_CCW);
+    this->diablo->render();
     this->render_imgui();
     glfwSwapBuffers(this->window);
 }
@@ -276,6 +273,8 @@ void Engine::render_imgui() {
     ImGui::Text("Vendor: %s", this->vendor);
     ImGui::Text("FPS: %d", this->fps);
     ImGui::Text("Frame time: %f", ((float)1 / this->fps) * 1000.0f);
+    ImGui::Checkbox("Wireframe", &this->wireframe);
+    ImGui::SameLine();
     ImGui::Checkbox("V-Sync", &this->b_vsync);
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     ImGui::InputFloat("Fov", &this->camera->Zoom, 5, 5);
@@ -303,11 +302,6 @@ void Engine::input() {
     this->isRunning = glfwGetKey(this->window, GLFW_KEY_ESCAPE) == GLFW_PRESS
                           ? false
                           : this->running();
-
-    if (glfwGetKey(this->window, GLFW_KEY_O))
-        this->wireframe = true;
-    if (glfwGetKey(this->window, GLFW_KEY_P))
-        this->wireframe = false;
 
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
         glfwSetInputMode(this->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -397,17 +391,15 @@ void Engine::update() {
 
     this->chunker->update(camera->Position);
 
-    if (this->wireframe) {
+    if (this->wireframe)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    } else {
+    else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
 
-    if (this->b_vsync) {
+    if (this->b_vsync)
         glfwSwapInterval(1);
-    } else {
+    else
         glfwSwapInterval(0);
-    }
 
     float farP = 1.141 * this->chunker->render_distance * Chunk::CHUNK_SIZE;
 
@@ -418,9 +410,6 @@ void Engine::update() {
     this->view = this->camera->get_view_matrix();
 }
 void Engine::clean() {
-    freeGLObject(&glModel);
-    freeOBJModel(&objModel);
-
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

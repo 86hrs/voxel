@@ -18,7 +18,6 @@ void main() {
     TexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
     TextureIndex = aTextureIndex;
     Normal = aNormal;
-    
     vec3 modifiedPos = aPos;
     
     // Leaf texture animation

@@ -43,11 +43,16 @@ class Camera {
     }
     void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
         float velocity = MovementSpeed * deltaTime;
+        float c = Position.y;
 
-        if (direction == FORWARD)
+        if (direction == FORWARD) {
             Position += Front * velocity;
-        if (direction == BACKWARD)
+            Position.y = c;
+        }
+        if (direction == BACKWARD) {
             Position -= Front * velocity;
+            Position.y = c;
+        }
         if (direction == LEFT)
             Position -= Right * velocity;
         if (direction == RIGHT)
@@ -83,8 +88,7 @@ class Camera {
         front.y = sin(glm::radians(this->Pitch));
         front.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
         this->Front = glm::normalize(front);
-        this->Right =
-            glm::normalize(glm::cross(this->Front, this->WorldUp));
+        this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));
         this->Up = glm::normalize(glm::cross(this->Right, this->Front));
     }
 };

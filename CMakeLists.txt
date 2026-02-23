@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 4.2.3)
 project(main)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj)
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(Freetype REQUIRED)
+find_package(glm REQUIRED)
 find_package(assimp REQUIRED)
 
 # ImGui setup
@@ -34,17 +34,12 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${IMGUI_SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
     src
-    /opt/homebrew/Cellar/glm/1.0.3/include/
-    /opt/homebrew/Cellar/glfw/3.4/include/
-    /opt/homebrew/Cellar/assimp/6.0.4_1/include/
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
-    ${FREETYPE_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
     ${OPENGL_LIBRARIES}
-    ${FREETYPE_LIBRARIES}
     glfw
     assimp::assimp
 )

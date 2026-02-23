@@ -91,12 +91,15 @@ void Model::load_embedded_texture(const aiTexture *texture, GLuint &texID) {
         return;
     }
 
-    // Determine format based on channels
     GLenum format, internalFormat;
     switch (channels) {
     case 1:
         format = GL_RED;
         internalFormat = GL_R8;
+        break;
+    case 2:
+        format = GL_RG;
+        internalFormat = GL_RG8;
         break;
     case 3:
         format = GL_RGB;
@@ -156,7 +159,6 @@ void Model::build_meshes() {
         newMesh.vertices.reserve(mesh->mNumVertices);
         newMesh.indices.reserve(mesh->mNumFaces * 3);
 
-        // Vertices
         for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
             const aiVector3D *pos = &mesh->mVertices[i];
             const aiVector3D *normal = &mesh->mNormals[i];
@@ -184,40 +186,41 @@ void Model::build_meshes() {
             aiString str;
             material->GetTexture(aiTextureType_BASE_COLOR, 0, &str);
             const aiTexture *tex = scene->GetEmbeddedTexture(str.C_Str());
-            if (tex) {
+            if (tex)
                 load_embedded_texture(tex, newMesh.diffuseTexture);
-            }
         }
-
-        glGenVertexArrays(1, &newMesh.vao);
-        glGenBuffers(1, &newMesh.vbo);
-        glGenBuffers(1, &newMesh.ebo);
-
-        glBindVertexArray(newMesh.vao);
-        glBindBuffer(GL_ARRAY_BUFFER, newMesh.vbo);
-        glBufferData(GL_ARRAY_BUFFER, newMesh.vertices.size() * sizeof(Vertex),
-                     newMesh.vertices.data(), GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void *)offsetof(Vertex, position));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void *)offsetof(Vertex, texCoords));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void *)offsetof(Vertex, normal));
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, newMesh.ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     newMesh.indices.size() * sizeof(uint32_t),
-                     newMesh.indices.data(), GL_STATIC_DRAW);
-        glBindVertexArray(0);
-
         meshes.push_back(newMesh);
     }
-
+    for (Mesh &mesh : this->meshes) {
+        this->upload_to_gpu(mesh);
+    }
     std::cout << "Loaded " << meshes.size() << " meshes.\n";
+}
+void Model::upload_to_gpu(Mesh &mesh) {
+    glGenVertexArrays(1, &mesh.vao);
+    glGenBuffers(1, &mesh.vbo);
+    glGenBuffers(1, &mesh.ebo);
+
+    glBindVertexArray(mesh.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex),
+                 mesh.vertices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, position));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, texCoords));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void *)offsetof(Vertex, normal));
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(),
+                 GL_STATIC_DRAW);
+    glBindVertexArray(0);
 }
 
 void Model::render() {
@@ -229,6 +232,7 @@ void Model::render() {
             glBindTexture(GL_TEXTURE_2D, mesh.diffuseTexture);
         }
         glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)mesh.indices.size(),
+                       GL_UNSIGNED_INT, 0);
     }
 }

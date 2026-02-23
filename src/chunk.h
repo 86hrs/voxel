@@ -19,10 +19,6 @@ struct Chunk {
     std::vector<int> texture_index_data;
     glm::vec2 chunk_position;
 
-    int chunk_verticies = 0;
-    int chunk_triangles = 0;
-    int chunk_trees = 0;
-
     std::unique_ptr<FastNoiseLite> noise;
 
     static constexpr float face_verticies[6][12] = {

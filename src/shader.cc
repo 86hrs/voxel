@@ -79,7 +79,7 @@ void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const {
 }
 void Shader::set_int_array(const std::string &name,
                            const std::vector<int> &values) const {
-    glUniform1iv(glGetUniformLocation(ID, name.c_str()), values.size(),
+    glUniform1iv(glGetUniformLocation(ID, name.c_str()), (GLsizei)values.size(),
                  values.data());
 }
 

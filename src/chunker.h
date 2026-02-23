@@ -14,10 +14,6 @@ struct ChunkManager {
     Shader *shader;
     int render_distance = 12;
 
-    int total_verticies = 0;
-    int total_triangles = 0;
-    int total_trees = 0;
-
     int cameraChunkX;
     int cameraChunkZ;
 
@@ -61,11 +57,6 @@ struct ChunkManager {
     void load_chunk(int x, int z) {
         std::string key = this->get_chunk_key(x, z);
         this->chunks[key] = std::make_unique<Chunk>(x, z);
-        auto &chunk = this->chunks[key];
-
-        this->total_triangles += chunk->chunk_triangles;
-        this->total_verticies += chunk->chunk_verticies;
-        this->total_trees += chunk->chunk_trees;
     }
     void unload_chunks() {
         for (auto it = chunks.begin(); it != chunks.end();) {
@@ -73,16 +64,11 @@ struct ChunkManager {
             int chunkX = std::stoi(it->first.substr(0, delim_pos));
             int chunkZ = std::stoi(it->first.substr(delim_pos + 1));
 
-            auto &chunk = it->second;
-
             bool render_distance_condition =
                 std::abs(chunkX - cameraChunkX) > render_distance or
                 std::abs(chunkZ - cameraChunkZ) > render_distance;
 
             if (render_distance_condition) {
-                this->total_triangles -= chunk->chunk_triangles;
-                this->total_verticies -= chunk->chunk_verticies;
-                this->total_trees -= chunk->chunk_trees;
                 it = this->chunks.erase(it);
             } else {
                 it++;

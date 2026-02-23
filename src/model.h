@@ -2,6 +2,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "assimp/anim.h"
 #include "glad.h"
 #include <glm/glm.hpp>
 #include <assimp/scene.h>
@@ -37,6 +38,7 @@ class Model {
 
     void load_scene();
     void build_meshes();
+    void upload_to_gpu(Mesh& mesh);
     void load_embedded_texture(const aiTexture *texture, GLuint &texID);
 };
 

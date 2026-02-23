@@ -268,6 +268,10 @@ void Engine::render() {
     this->render_imgui();
     glfwSwapBuffers(this->window);
 }
+
+static bool keyboard_current = true;
+static bool keyboard_prev = true;
+
 void Engine::render_imgui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -288,14 +292,13 @@ void Engine::render_imgui() {
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
     ImGui::InputInt("Render Distance", &this->chunker->render_distance, 1, 20);
     ImGui::Text("Loaded chunks: %lu", this->chunker->chunks.size());
-    ImGui::Text("Trees: %d", this->chunker->total_trees);
-    ImGui::Text("Verticies: %d", this->chunker->total_verticies);
-    ImGui::Text("Triangles: %d", this->chunker->total_triangles);
     ImGui::Text("Camera Position:");
     ImGui::SameLine();
     ImGui::TextColored(ImVec4(1, 1, 0, 1), "X:%.2f Y:%.2f Z:%.2f",
                        this->camera->Position.x, this->camera->Position.y,
                        this->camera->Position.z);
+
+    ImGui::Checkbox("Keyboard enable", &keyboard_current);
     ImGui::End();
 
     ImGui::Render();
@@ -380,6 +383,7 @@ void Engine::input() {
     prevLeftMousePressed = leftMousePressed;
     prevRightMousePressed = rightMousePressed;
 }
+#include <fstream>
 void Engine::update() {
     glfwPollEvents();
 
@@ -415,6 +419,38 @@ void Engine::update() {
                          (float)this->width / (float)this->height, 0.1f, farP);
 
     this->view = this->camera->get_view_matrix();
+
+    if (keyboard_current != keyboard_prev) {
+        if (keyboard_current == true) {
+            system("hidutil property --set '{\"UserKeyMapping\":[]}'");
+        } else {
+            std::ofstream out("disable_keys.json");
+            out << "{ \"UserKeyMapping\": [\n";
+
+            for (long key = 0x700000004; key <= 0x700000035; ++key)
+                out << "{\"HIDKeyboardModifierMappingSrc\":0x" << std::hex
+                    << key << ", \"HIDKeyboardModifierMappingDst\":0x0},\n";
+
+            for (long key = 0x70000003a; key <= 0x700000045; ++key)
+                out << "{\"HIDKeyboardModifierMappingSrc\":0x" << std::hex
+                    << key << ", \"HIDKeyboardModifierMappingDst\":0x0},\n";
+
+            for (long key = 0x700000068; key <= 0x70000006e; ++key)
+                out << "{\"HIDKeyboardModifierMappingSrc\":0x" << std::hex
+                    << key << ", \"HIDKeyboardModifierMappingDst\":0x0},\n";
+
+            for (long key = 0x70000004f; key <= 0x700000052; ++key)
+                out << "{\"HIDKeyboardModifierMappingSrc\":0x" << std::hex
+                    << key << ", \"HIDKeyboardModifierMappingDst\":0x0},\n";
+
+            out.seekp(-2, std::ios_base::end);
+            out << "\n] }";
+            out.close();
+
+            system("hidutil property --set \"$(cat disable_keys.json)\"");
+        }
+    }
+    keyboard_prev = keyboard_current;
 }
 void Engine::clean() {
     delete this->doom;

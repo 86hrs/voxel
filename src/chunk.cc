@@ -101,7 +101,6 @@ void Chunk::generate_terrain() {
                     z < CHUNK_SIZE - 2) {
                     if (treeValue > 0.89f and y < CHUNK_SIZE - 6) {
                         generate_tree(x, y + 1, z);
-                        this->chunk_trees += 1;
                     }
                 }
             }
@@ -145,7 +144,7 @@ void Chunk::generate_tree(int x, int y, int z) {
 }
 void Chunk::render() {
     glBindVertexArray(this->vao);
-    glDrawElements(GL_TRIANGLES, this->index_data.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, (GLsizei)this->index_data.size(), GL_UNSIGNED_INT, 0);
 }
 void Chunk::build_mesh() {
     this->vertex_data.clear();
@@ -246,8 +245,6 @@ void Chunk::add_block_to_mesh(int x, int y, int z, int &index,
              (unsigned int)(index + 2), (unsigned int)(index + 3)});
 
         index += 4;
-        this->chunk_verticies += 4;
-        this->chunk_triangles += 2;
     }
 }
 
